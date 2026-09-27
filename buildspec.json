@@ -33,13 +33,13 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.example.plugintemplate-for-obs"
+            "bundleId": "com.yiyan.kanamireporter"
         }
     },
-    "name": "plugintemplate-for-obs",
-    "displayName": "Plugin Template for OBS",
-    "version": "1.0.0",
-    "author": "Your Name Here",
-    "website": "https://example.com",
-    "email": "me@example.com"
+    "name": "Kanami-Reporter",
+    "displayName": "Kanami Reporter",
+    "version": "0.1.0",
+    "author": "Yiyan",
+    "website": "https://y1yan.com",
+    "email": "me@y1yan.com"
 }

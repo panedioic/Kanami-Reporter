@@ -34,6 +34,23 @@ if(ENABLE_QT)
   )
 endif()
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.c)
+target_sources(
+  ${CMAKE_PROJECT_NAME}
+  PRIVATE
+    src/plugin-main.c
+    src/voice-filter.c
+)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
+
+install(
+  TARGETS ${CMAKE_PROJECT_NAME}
+  RUNTIME DESTINATION obs-plugins/64bit
+  LIBRARY DESTINATION obs-plugins/64bit
+)
+
+install(
+  DIRECTORY data/
+  DESTINATION data/obs-plugins/${_name}
+  OPTIONAL
+)
