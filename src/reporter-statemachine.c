@@ -23,6 +23,7 @@ static int player_kill = 0;
 static int game_score_us = 0;
 static int game_score_enemy = 0;
 static int game_score_target = 10;
+static int current_round = 0;
 
 static int alive_players_us = 0;
 static int alive_players_enemy = 0;
@@ -144,9 +145,17 @@ void reporter_state_process_frame(void *argument)
 		alive_players_enemy_1_triggered = true;
 	}
 
-	if (current_state_id == STATE_ROUND_START && current_state_time >= 24.0 && !start_last_5s_triggered) {
-		reporter_trigger("event_round_start_last_5s");
-		start_last_5s_triggered = true;
+	if (current_state_id == STATE_ROUND_START && !start_last_5s_triggered) {
+		if (current_round == 0 && current_state_time >= 36.0) {
+			reporter_trigger("event_round_start_last_5s");
+			start_last_5s_triggered = true;
+		} else if (current_round == 10 && current_state_time >= 37.0) {
+			reporter_trigger("event_round_start_last_5s");
+			start_last_5s_triggered = true;
+		} else if (current_state_time >= 22.0) {
+			reporter_trigger("event_round_start_last_5s");
+			start_last_5s_triggered = true;
+		}
 	}
 
 	if (current_state_id == STATE_ROUND_INGAME && current_state_time >= 75.0 && !round_last_40s_triggered) {
@@ -199,9 +208,7 @@ void reporter_state_process_frame(void *argument)
 			current_side = 2;
 
 		} else if (current_state_id == STATE_ROUND_START) {
-			if (game_score_us + game_score_enemy ==
-				    game_score_target - 2 &&
-			    game_score_target == 10) {
+			if (current_round == 8) {
 				reporter_trigger("event_last_round_of_first_half");
 
 			} else if (game_score_us + 1 == game_score_target ||
@@ -213,11 +220,11 @@ void reporter_state_process_frame(void *argument)
 				   game_score_target > 10) {
 				reporter_trigger("event_overtime_round");
 
-			} else if (game_score_us + game_score_enemy ==
-					   game_score_target - 1 &&
-				   game_score_target == 10) {
+			} else if (current_round == 9) {
 				reporter_trigger("event_game_start_second_half");
 			}
+
+			current_round += 1;
 
 		} else if (current_state_id == STATE_ROUND_END_WIN ||
 			   current_state_id == STATE_ROUND_END_LOSE) {
