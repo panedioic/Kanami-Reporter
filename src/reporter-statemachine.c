@@ -15,6 +15,8 @@
 static const char *current_state = "unknown";
 static enum state_id current_state_id = STATE_COUNT;
 
+/* 纳秒，使用截图时的单调时钟时间戳。 */
+static uint64_t state_entered_at_ns = 0;
 static double current_state_time = 0.0;
 
 static int player_kill = 0;
@@ -61,6 +63,7 @@ void reporter_state_reset(void)
 	game_score_us = 0;
 	game_score_enemy = 0;
 	current_state_time = 0.0;
+	state_entered_at_ns = 0;
 
 	alive_players_us = 0;
 	alive_players_enemy = 0;
@@ -100,7 +103,13 @@ void reporter_state_process_frame(void *argument)
 		return;
 
 	/* 更新当前游戏状态信息 */
-	current_state_time += 0.1;
+	const uint64_t now_ns = frame->timestamp;
+
+	if (state_entered_at_ns != 0 && now_ns >= state_entered_at_ns) {
+		current_state_time = (double)(now_ns - state_entered_at_ns) / 1000000000.0;
+	} else {
+		current_state_time = 0.0;
+	}
 
 	player_kill = reporter_get_player_kill(gray, width, height);
 
@@ -281,8 +290,10 @@ void reporter_state_process_frame(void *argument)
 			reporter_trigger(state_name);
 		}
 
-		/* 必须在break之前，否则无法执行。 */
+		/* 上面的分支已经使用完旧状态持续时间，现在开始新状态计时。 */
+		state_entered_at_ns = now_ns;
 		current_state_time = 0.0;
+
 		break;
 	}
 }
