@@ -20,6 +20,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <plugin-support.h>
 
 #include "voice-filter.h"
+#include "reporter-trigger.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("Kanami-Reporter", "en-US")
@@ -33,5 +34,6 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+	reporter_audio_shutdown();
 	obs_log(LOG_INFO, "Kanami-Reporter unloaded");
 }

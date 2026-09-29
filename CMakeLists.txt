@@ -50,6 +50,10 @@ target_sources(
     src/reporter-trigger.c
 )
 
+if(WIN32)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE winmm)
+endif()
+
 if(MSVC)
   target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /utf-8)
 endif()
