@@ -39,7 +39,20 @@ target_sources(
   PRIVATE
     src/plugin-main.c
     src/voice-filter.c
+    src/reporter-states.c
+    src/reporter-statemachine.c
+    src/reporter-detector.c
+    src/reporter-template.c
+    src/reporter-capture.c
+    src/reporter-settings.c
+    src/reporter-properties.c
+    src/reporter-worker.c
+    src/reporter-trigger.c
 )
+
+if(MSVC)
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /utf-8)
+endif()
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
 

@@ -1,0 +1,29 @@
+// src/reporter-states.h - State definitions for Kanami Reporter filter.
+
+#pragma once
+
+enum state_id {
+	STATE_GAME_CHOOSE_CHARACTER,
+	STATE_GAME_START_ATTACKER,
+	STATE_GAME_START_DEFENDER,
+	STATE_GAME_SWITCH_SIDE,
+	STATE_ROUND_START,
+	STATE_ROUND_INGAME,
+	STATE_ROUND_INGAME_BOMB_PLANTED,
+	STATE_ROUND_END_WIN,
+	STATE_ROUND_END_LOSE,
+	STATE_ROUND_WIN_FIVE_KILL,
+	STATE_ROUND_WIN_ALL_ALIVE,
+	STATE_ROUND_WIN_ALIVE_1,
+	STATE_GAME_END_WIN,
+	STATE_GAME_END_LOSE,
+	STATE_GAME_END_DRAW,
+
+	STATE_COUNT
+};
+
+/*
+ * 模板事件名。原有名称与顺序保持不变，
+ * 因此已保存的KRT模板仍然可用。
+ */
+extern const char *const state_names[STATE_COUNT];
