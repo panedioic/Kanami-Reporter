@@ -108,6 +108,10 @@ unsigned int __stdcall reporter_worker(void *argument)
 
 		EnterCriticalSection(&data->lock);
 
+		bool reload = data->reload_requested;
+		if (reload)
+			data->reload_requested = false;
+
 		bool stop = data->stop;
 		struct frame_data *frame = data->pending;
 		data->pending = NULL;
@@ -146,6 +150,32 @@ unsigned int __stdcall reporter_worker(void *argument)
 		if (stop) {
 			reporter_frame_free(frame);
 			break;
+		}
+
+		if (reload) {
+			for (int i = 0; i < STATE_COUNT; i++)
+				reporter_template_free(&data->models[i]);
+
+			int count = 0;
+
+			for (int i = 0; i < STATE_COUNT; i++) {
+				char *path = reporter_template_path(
+					data->template_dir, i);
+
+				if (path && reporter_template_load(
+						     path, &data->models[i])) {
+					count++;
+				}
+
+				bfree(path);
+			}
+
+			blog(LOG_INFO,
+			     "[Kanami-Reporter] Reloaded %d templates from %s",
+			     count, data->template_dir);
+
+			reporter_state_reset();
+			was_enabled = false;
 		}
 
 		if (!frame)

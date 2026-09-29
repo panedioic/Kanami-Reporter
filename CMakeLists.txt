@@ -48,10 +48,11 @@ target_sources(
     src/reporter-properties.c
     src/reporter-worker.c
     src/reporter-trigger.c
+    src/reporter-import.c
 )
 
 if(WIN32)
-  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE winmm)
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE winmm comdlg32)
 endif()
 
 if(MSVC)

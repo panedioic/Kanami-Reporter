@@ -54,4 +54,7 @@ struct kanami_reporter_data {
 
     /* 模板识别器数据，按 state_id 索引。 */
     struct template_data models[STATE_COUNT];
+
+	/* 资源导入完成后，通知工作线程重新加载模板。 */
+	bool reload_requested;
 };

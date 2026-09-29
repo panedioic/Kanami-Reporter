@@ -4,6 +4,7 @@
 #include "reporter-context.h"
 #include "reporter-states.h"
 #include "reporter-settings.h"
+#include "reporter-import.h"
 
 #include <util/platform.h>
 
@@ -50,6 +51,28 @@ static bool request_preview(obs_properties_t *props,
 	     "[Kanami-Reporter] ROI preview requested. "
 	     "Keep the source visible.");
 
+	return false;
+}
+
+static bool request_import_resources(obs_properties_t *props,
+				     obs_property_t *property,
+				     void *private_data)
+{
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+
+	struct kanami_reporter_data *data = private_data;
+	if (!data)
+		return false;
+
+	if (!reporter_import_resources_from_dialog())
+		return false;
+
+	EnterCriticalSection(&data->lock);
+	data->reload_requested = true;
+	LeaveCriticalSection(&data->lock);
+
+	SetEvent(data->wake);
 	return false;
 }
 
@@ -103,6 +126,11 @@ obs_properties_t *reporter_properties(void *private_data)
 	obs_properties_add_button(
 		props, "save_template", "Save / replace event template",
 		request_template);
+
+	obs_properties_add_button(
+		props, "import_resources",
+		"Import resource package (zip)",
+		request_import_resources);
 
 	obs_properties_add_text(
 		props, "help",
