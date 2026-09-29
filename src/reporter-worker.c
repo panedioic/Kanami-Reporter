@@ -189,7 +189,7 @@ unsigned int __stdcall reporter_worker(void *argument)
 
 		uint64_t now = os_gettime_ns();
 
-		if (now - report_since >= 10000000000ULL) {
+		if (now - report_since >= 30000000000ULL) {
 			blog(LOG_INFO,
 			     "[Kanami-Reporter] [PERF] processed=%llu "
 			     "dropped=%llu avg_worker_ms=%.2f state=%s",
