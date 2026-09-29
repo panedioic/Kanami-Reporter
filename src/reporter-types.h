@@ -10,7 +10,7 @@
 #define FRAME_W 1920
 #define FRAME_H 1080
 #define FRAME_BYTES ((size_t)FRAME_W * FRAME_H * 4)
-#define CAPTURE_NS 300000000ULL
+#define CAPTURE_NS 100000000ULL
 
 /* 单个事件模板的面积上限，不是整帧截图上限。 */
 #define MAX_TEMPLATE_PIXELS 262144
