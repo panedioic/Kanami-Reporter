@@ -4,7 +4,7 @@ Kanami-Reporter 是一个 OBS Studio 视频滤镜插件。它按固定频率读�
 在指定区域做图像模板匹配，通过状态机判断游戏当前所处阶段，并在状态变化时
 播放对应的语音，用于替换游戏内的播报语音。
 
-当前实现针对《黑潮爆破》爆破模式的 `1920x1080` 画面。
+当前实现针对《三角洲行动》黑潮爆破模式的 `2560x1440` 画面（obs 需设置为 1920x1080）。
 
 - 许可证：GPL-2.0-or-later
 - 作者：Yiyan <me@y1yan.com>
@@ -58,8 +58,7 @@ reporter-worker       工作线程
 
 - 截图在 OBS 渲染线程执行，识别在独立工作线程执行，不阻塞渲染。
 - 队列只保留最新帧，处理不过来时丢旧帧，避免延迟累积。
-- 所有状态共用同一张截图，避免不同区域的画面来自不同时刻。
-- 状态机只使用字符串状态名，判断器逐个尝试，命中即切换。
+- 状态机只使用字符串状态名，判断器进行判断，命中即切换状态。
 - 模板匹配使用归一化互相关，允许一像素偏移。
 
 ---
@@ -134,7 +133,7 @@ OBS 滤镜本体。定义 `obs_source_info`，处理创建、销毁、参数更�
 
 | 名称 | 说明 |
 |---|---|
-| `FRAME_W` / `FRAME_H` | 识别基准分辨率，当前 `1920x1080` |
+| `FRAME_W` / `FRAME_H` | 识别基准分辨率，当前 `1920x1080`（obs 画面分辨率） |
 | `FRAME_BYTES` | 单帧 BGRA 字节数 |
 | `CAPTURE_NS` | 截图间隔，`100ms` |
 | `MAX_TEMPLATE_PIXELS` | 单个模板面积上限，`262144` |
@@ -167,8 +166,8 @@ OBS 滤镜本体。定义 `obs_source_info`，处理创建、销毁、参数更�
 |---|---|
 | `reporter_state_reset()` | 复位全部状态与内部计数 |
 | `reporter_state_process_frame(void *argument)` | 处理一帧 |
-| `reporter_state_get_current()` | 当前状态名 |
-| `reporter_state_set_target_score()` | 设置目标分数 |
+| `reporter_state_get_current()` | 当前状态名 (deprecated) |
+| `reporter_state_set_target_score()` | 设置目标分数 (deprecated) |
 
 计时使用状态进入时间戳与截图时间戳的差值，不依赖每帧累加。
 
@@ -288,24 +287,26 @@ OBS 属性界面：启用开关、匹配阈值、事件选择、ROI 输入、
 
 ## 识别状态列表
 
-状态顺序即判断顺序，前一个状态未命中才尝试下一个。
+间隔固定时间根据截图判断当前状态，若和上一时刻不同则切换状态。
+所有状态定义于 `src/reporter-states.h`。
 
 | 编号 | 状态名 | 含义 |
 |---:|---|---|
 | 0 | `game_choose_character` | 角色选择界面 |
 | 1 | `game_start_attacker` | 进攻方开场 |
 | 2 | `game_start_defender` | 防守方开场 |
-| 3 | `game_start_second_half` | 下半场第一局 |
-| 4 | `game_switch_side` | 攻守互换 |
-| 5 | `round_start` | 准备阶段 |
-| 6 | `round_ingame` | 正式回合进行中 |
-| 7 | `round_ingame_bomb_planted` | 炸弹已安装 |
-| 8 | `round_end_win` | 回合胜利 |
-| 9 | `round_end_lose` | 回合战败 |
-| 10 | `round_end_five_kill` | 单人消灭对方全队 |
-| 11 | `game_end_win` | 整场胜利 |
-| 12 | `game_end_lose` | 整场失败 |
-| 13 | `game_end_draw` | 平局 |
+| 3 | `game_switch_side` | 攻守互换 |
+| 4 | `round_start` | 准备阶段 |
+| 5 | `round_ingame` | 正式回合进行中 |
+| 6 | `round_ingame_bomb_planted` | 炸弹已安装 |
+| 7 | `round_end_win` | 回合胜利 |
+| 8 | `round_end_lose` | 回合战败 |
+| 9 | `round_win_five_kill` | 单人消灭对方全队 |
+| 10 | `round_win_all_alive` | 胜利时我方全体存活 |
+| 11 | `round_win_alive_1` | 胜利时我方仅存活 1 人 |
+| 12 | `game_end_win` | 整场胜利 |
+| 13 | `game_end_lose` | 整场失败 |
+| 14 | `game_end_draw` | 平局 |
 
 每个状态对应一个模板文件，文件名即状态名加 `.krt` 后缀。
 
@@ -355,39 +356,6 @@ OBS 属性界面：启用开关、匹配阈值、事件选择、ROI 输入、
 
 OBS 源码与依赖由 CMake 自动下载到 `.deps/` 目录，首次配置需要联网。
 
-### 一键编译、安装、打包
-
-在**管理员** PowerShell 中执行：
-
-```powershell
-cd C:\Myws\KanamiReporter
-.\build-install.ps1
-```
-
-脚本参数：
-
-| 参数 | 说明 |
-|---|---|
-| `-LaunchObs` | 安装完成后启动 OBS |
-| `-SkipPackage` | 只编译安装，不生成交付包 |
-| `-ConfigureAttempts <1-5>` | 配置失败时的重试次数，默认 3 |
-
-执行流程：
-
-1. 检查管理员权限、OBS 是否存在、OBS 是否已关闭。
-2. CMake 配置，失败时按设定次数重试。
-3. 以 `RelWithDebInfo` 配置编译。
-4. 复制 DLL 与 `data` 到 OBS 安装目录。
-5. 生成 `dist/` 下的两个交付包。
-
-如需使用代理下载依赖：
-
-```powershell
-$env:HTTPS_PROXY = "http://127.0.0.1:7890"
-$env:HTTP_PROXY = $env:HTTPS_PROXY
-.\build-install.ps1
-```
-
 ### 手动编译
 
 ```powershell
@@ -398,12 +366,6 @@ cmake --build build --config RelWithDebInfo --parallel
 ---
 
 ## 安装
-
-### 自动安装
-
-`build-install.ps1` 已完成安装，无需手动复制。
-
-### 手动安装
 
 插件本体：
 
@@ -417,7 +379,7 @@ data\*
 
 安装后完全退出并重新启动 OBS。
 
-### 安装配置
+## 安装配置
 
 将 `templates` 和 `voices` 放入：
 
@@ -467,12 +429,4 @@ data\*
 
 事件名必须与 `reporter-trigger.c` 中的映射表完全一致。
 
-| 事件名 | 触发条件 | 语音 |
-|---|---|---|
-| `event_round_ingame_last_40s` | 进入正式回合后经过 75 秒 | 距离战斗结束还剩40秒 |
-| `event_round_ingame_last_20s` | 进入正式回合后经过 95 秒 | 只剩20秒咯 |
-| `round_end_win` | 回合胜利 | 演出完美谢幕，大家辛苦了 |
-| `round_end_lose` | 回合战败 | 聚光灯关上了，表演也结束了 |
-| `event_alive_players_us_1` | 我方存活人数变为 1 | 这就是最后的希望了 |
-| `event_alive_players_enemy_1` | 敌方存活人数变为 1 | 对面的舞台上，只剩下独唱了呢 |
-| `event_bomber_down` | 炸弹携带者
+详见 `reporter-trigger.c` 。
